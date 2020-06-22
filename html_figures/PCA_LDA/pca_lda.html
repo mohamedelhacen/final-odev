@@ -1,0 +1,208 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>pca_lda</title><meta name="generator" content="MATLAB 8.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-21"><meta name="DC.source" content="pca_lda.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#2">Data</a></li><li><a href="#3">PCA transformation</a></li><li><a href="#4">LDA Transformation</a></li><li><a href="#5">Discriminant classification</a></li><li><a href="#6">Dimentionality Reduction</a></li></ul></div><pre class="codeinput">warning(<span class="string">'off'</span>);
+</pre><h2>Data<a name="2"></a></h2><pre class="codeinput">[row, col, dims] = size(indian_pines_corrected);
+x = double(reshape(indian_pines_corrected, row*col, dims));
+[r, c] = size(indian_pines_gt);
+classes = reshape(indian_pines_gt, r*c,1);
+</pre><h2>PCA transformation<a name="3"></a></h2><p>Before PCA transformation</p><pre class="codeinput">figure(1)
+gscatter(x(:,10), x(:,20), classes)
+title(<span class="string">'Before PCA transformation'</span>)
+xlabel(<span class="string">'component 10'</span>)
+ylabel(<span class="string">'component 20'</span>)
+
+<span class="comment">% After PCA transformation</span>
+[coeff,score,latent] = pca(x);
+pv1 = cumsum(latent/sum(latent));
+
+new_x = score * coeff;
+figure(2)
+gscatter(new_x(:,10),new_x(:,20), classes)
+title(<span class="string">'After PCA transformation'</span>)
+xlabel(<span class="string">'component 10'</span>)
+ylabel(<span class="string">'component 20'</span>)
+
+figure(3)
+plot(pv1)
+hold <span class="string">on</span>
+plot(5,pv1(5,1), <span class="string">'r*'</span>)
+title(<span class="string">'PoV after PCA transformation'</span>)
+
+h = sprintf(<span class="string">'The k value in the 0.95 varinace is 5'</span>);
+disp(h)
+</pre><pre class="codeoutput">The k value in the 0.95 varinace is 5
+</pre><img vspace="5" hspace="5" src="pca_lda_01.png" alt=""> <img vspace="5" hspace="5" src="pca_lda_02.png" alt=""> <img vspace="5" hspace="5" src="pca_lda_03.png" alt=""> <h2>LDA Transformation<a name="4"></a></h2><pre class="codeinput">[y,~,~] = LDA(new_x,classes);
+
+figure(4)
+gscatter(new_x(:,10), new_x(:,20), classes)
+title(<span class="string">'Before LDA transformation'</span>)
+xlabel(<span class="string">'component 10'</span>)
+ylabel(<span class="string">'component 20'</span>)
+
+figure(5)
+gscatter(y(:,10), y(:,20), classes)
+title(<span class="string">'After LDA transformation'</span>)
+xlabel(<span class="string">'component 10'</span>)
+ylabel(<span class="string">'component 20'</span>)
+</pre><img vspace="5" hspace="5" src="pca_lda_04.png" alt=""> <img vspace="5" hspace="5" src="pca_lda_05.png" alt=""> <h2>Discriminant classification<a name="5"></a></h2><pre class="codeinput">X = [y(:,10), y(:,20)];
+MdlLinear = fitcdiscr(X, classes, <span class="string">'DiscrimType'</span>,<span class="string">'linear'</span>);
+CVmodel = crossval(MdlLinear, <span class="string">'KFold'</span>,5);
+loss = kfoldLoss(CVmodel);
+performance = sprintf(<span class="string">'the classsification performance is %s'</span>,loss);
+disp(performance)
+</pre><pre class="codeoutput">the classsification performance is 4.867063e-01
+</pre><h2>Dimentionality Reduction<a name="6"></a></h2><pre class="codeinput">figure(6)
+k = 200/5;
+<span class="keyword">for</span> i = k:k:200
+    [coeff,score,latent] = pca(y);
+    new_x = score * coeff;
+    [y,~,~] = LDA(new_x,classes);
+    y = y(:,1:200-i);
+    pv = cumsum(latent/sum(latent));
+    plot(pv)
+    legend(<span class="string">'K=160'</span>, <span class="string">'K=120'</span>, <span class="string">'K=80'</span>, <span class="string">'K=40'</span>, <span class="string">'K=0'</span>)
+    hold <span class="string">on</span>
+    title(<span class="string">'PoV for different K after PCA transformation'</span>)
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="pca_lda_06.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2015b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+warning('off');
+%% Data
+[row, col, dims] = size(indian_pines_corrected);
+x = double(reshape(indian_pines_corrected, row*col, dims));
+[r, c] = size(indian_pines_gt);
+classes = reshape(indian_pines_gt, r*c,1);
+
+%% PCA transformation
+% Before PCA transformation
+figure(1)
+gscatter(x(:,10), x(:,20), classes)
+title('Before PCA transformation')
+xlabel('component 10')
+ylabel('component 20')
+
+% After PCA transformation
+[coeff,score,latent] = pca(x);
+pv1 = cumsum(latent/sum(latent));
+
+new_x = score * coeff;
+figure(2)
+gscatter(new_x(:,10),new_x(:,20), classes)
+title('After PCA transformation')
+xlabel('component 10')
+ylabel('component 20')
+
+figure(3)
+plot(pv1)
+hold on
+plot(5,pv1(5,1), 'r*')
+title('PoV after PCA transformation')
+
+h = sprintf('The k value in the 0.95 varinace is 5');
+disp(h)
+
+%% LDA Transformation
+[y,~,~] = LDA(new_x,classes);
+
+figure(4)
+gscatter(new_x(:,10), new_x(:,20), classes)
+title('Before LDA transformation')
+xlabel('component 10')
+ylabel('component 20')
+
+figure(5) 
+gscatter(y(:,10), y(:,20), classes)
+title('After LDA transformation')
+xlabel('component 10')
+ylabel('component 20')
+
+%% Discriminant classification
+X = [y(:,10), y(:,20)];
+MdlLinear = fitcdiscr(X, classes, 'DiscrimType','linear');
+CVmodel = crossval(MdlLinear, 'KFold',5);
+loss = kfoldLoss(CVmodel);
+performance = sprintf('the classsification performance is %s',loss); 
+disp(performance)
+%% Dimentionality Reduction  
+figure(6)
+k = 200/5;
+for i = k:k:200
+    [coeff,score,latent] = pca(y);
+    new_x = score * coeff;
+    [y,~,~] = LDA(new_x,classes); 
+    y = y(:,1:200-i);
+    pv = cumsum(latent/sum(latent));
+    plot(pv)
+    legend('K=160', 'K=120', 'K=80', 'K=40', 'K=0')
+    hold on 
+    title('PoV for different K after PCA transformation')
+end
+
+##### SOURCE END #####
+--></body></html>
